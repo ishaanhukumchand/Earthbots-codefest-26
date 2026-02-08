@@ -1,0 +1,96 @@
+
+<!DOCTYPE html> 
+<html>    
+<head>
+  <title>Kaboom</title>
+  <script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
+  <style>
+    body { display:flex; flex-direction:column; align-items:center; background:#030330; color:white; font-family:sans-serif; margin:0; }
+    button { margin:2px; padding:10px; font-size:16px; }
+  </style>
+</head>
+<body>
+
+<script>
+kaboom({ width:900, height:450, background:[20,20,30] })
+
+let score = 0
+let firing = false
+let gameOver = false
+let timeLeft = 180 // 3 min
+
+const uiScore = add([text("Score: 0", 24), pos(20,20)])
+const uiTimer = add([text("Time: 03:00", 24), pos(750,20)])
+const uiControls = add([text("Space to attack", 24), pos(300,20)])
+
+//const player = add([rect(30,30), pos(80,height()/2), area(), color(0,255,180), "player"])
+const player = add([ polygon([vec2(15, 0), vec2(0, 30), vec2(30, 30)]), pos(80, height() / 2),area(), color(0, 255, 0),"player"])
+
+const speed = 500
+player.onUpdate(()=> player.pos.y = clamp(player.pos.y,0,height()-player.height))
+
+onKeyDown("w", ()=>player.move(0,-speed))
+onKeyDown("s", ()=>player.move(0,speed))
+onKeyDown("up", ()=>player.move(0,-speed))
+onKeyDown("down", ()=>player.move(0,speed))
+
+onKeyDown("space", ()=>firing=true)
+onKeyRelease("space", ()=>firing=false)
+loop(0.15, ()=> {
+  if(!gameOver && firing){
+    add([rect(10,4), pos(player.pos.add(30,13)), area(), move(RIGHT,600), color(255,220,0), "bullet"])
+  }
+})
+
+loop(1, ()=> {
+  if(!gameOver){
+    add([rect(28,28), pos(width(),rand(40,height()-40)), area(), move(LEFT,200), color(255,80,80), "enemy"])
+  }
+})
+
+loop(1, ()=> {
+  if(!gameOver){
+    add([rect(80,60), pos(width(),rand(40,height()-40)), area(), move(LEFT,2000), color(128, 0, 128), "boss"])
+  }
+})
+
+loop(1, ()=> {
+  if(!gameOver){
+    add([circle(14), pos(width(), rand(40, height() - 40)),area(),move(LEFT, 1500),color(57, 255, 20),"powerup"])
+  }
+})
+
+onCollide("bullet","enemy",(b,e)=>{
+  if(!gameOver){ destroy(b); destroy(e); score++; uiScore.text="Score: "+score; shake(10) }
+})
+
+onCollide("bullet","boss",(b,bo)=>{
+  if(!gameOver){ destroy(b); destroy(bo); score = score+20 ; uiScore.text="Score: "+score; shake(10) }
+})
+
+onCollide("bullet","powerup",(b,p)=>{
+  if(!gameOver){ destroy(b); destroy(p); score = score+65; uiScore.text="Score: "+score; shake(0) }
+})
+
+onCollide("boss","player",(bo,pl)=>{
+  if(!gameOver){ destroy(bo); score = score-15; uiScore.text="Score: "+score; shake(50) }
+})
+
+const timerInterval = setInterval(()=>{
+  if(!gameOver){
+    timeLeft--
+    uiTimer.text = timeLeft
+
+    if(timeLeft <= 0){
+      gameOver = true
+      clearInterval(timerInterval)
+      add([text("Game Over! Score: "+score,32), pos(width()/2-150,height()/2-16)])
+    }
+  }
+}, 1000)
+
+</script>
+
+</body>
+
+</html>
